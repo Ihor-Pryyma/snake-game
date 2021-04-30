@@ -32,18 +32,32 @@ class Snake:
         self.direction = 'right'
 
     def update_move(self):
-        self.screen.fill(BACKGROUND_COLOR)
         for i in range(self.length-1, 0, -1):
+            self.x_coords[i] = self.x_coords[i-1]
+            self.y_coords[i] = self.y_coords[i-1]
+
+        if self.direction == 'up':
+            self.y_coords[0] -= SIZE
+        elif self.direction == 'down':
+            self.y_coords[0] += SIZE
+        elif self.direction == 'right':
+            self.x_coords[0] += SIZE
+        elif self.direction == 'left':
+            self.x_coords[0] -= SIZE
+        self.draw()
+
+    def draw(self):
+        self.screen.fill(BACKGROUND_COLOR)
+        for i in range(self.length):
             self.screen.blit(self.brick, (self.x_coords[i], self.y_coords[i]))
         pygame.display.update()
-
 
 class Game:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode(SCREEN_SIZE)
         self.screen.fill(BACKGROUND_COLOR)
-        self.snake = Snake(self.screen, 3)
+        self.snake = Snake(self.screen, 7)
 
     def run(self):
         running = True
@@ -63,6 +77,7 @@ class Game:
                 elif event.type == QUIT:
                     exit(0)
             self.snake.update_move()
+            time.sleep(0.3)
 
 if __name__ == "__main__":
     game = Game()
