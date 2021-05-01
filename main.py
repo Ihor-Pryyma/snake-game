@@ -4,6 +4,8 @@ import random
 
 from pygame.locals import *
 
+from fireworks import Firework, update as update_fireworks
+
 
 BACKGROUND_COLOR = (58, 178, 186)
 SCREEN_SIZE = (800, 600)
@@ -130,7 +132,7 @@ class Button:
 
 
 class Game:
-    INIT_SNAKE_LENGTH = 7
+    INIT_SNAKE_LENGTH = 1
     SPEED = 0.3
     SPEED_DIFFERENCE = 0.005
     SNAKE_HEAD_INDEX = 0
@@ -146,6 +148,7 @@ class Game:
         self.play_button = None
         self.close_button = None
         self.best_score = None
+        self.new_high_score = None
         self.init_game()
 
     def init_game(self):
@@ -154,6 +157,7 @@ class Game:
         self.apple = Apple(self.screen, self.snake.x_coords, self.snake.y_coords)
         self.score = self.INIT_SNAKE_LENGTH
         self.paused = False
+        self.new_high_score = False
         self.play_button = None
         self.close_button = None
         with open("resources/best_score.txt", "r") as best_score_file:
@@ -182,17 +186,47 @@ class Game:
 
     def _update_best_score(self):
         if self.score > int(self.best_score):
+            self.new_high_score = True
             with open("resources/best_score.txt", "w") as best_score_file:
                 best_score_file.write(str(self.score))
+
+    def _draw_game_over_buttons(self):
+        self.play_button = Button("resources/play_button.png", (SCREEN_SIZE[0]/2 - 100, SCREEN_SIZE[1] - 200))
+        self.close_button = Button("resources/close_button.png", (SCREEN_SIZE[0]/2 + 100, SCREEN_SIZE[1] - 200))
+        self.play_button.draw(self.screen)
+        self.close_button.draw(self.screen)
+
+    def _draw_message(self, message, font_size, font_color, position, bold):
+        font = pygame.font.SysFont("arial", font_size, bold)
+        text = font.render(message, True, font_color)
+        text_rect = text.get_rect(center=position)
+        self.screen.blit(text, text_rect)
+
+    def _draw_game_over_message(self):
+        if self.score > int(self.best_score):
+            high_score_message = f"New High Score: {self.score}"
+        else:
+            high_score_message = f"Your Score: {self.score}"
+        game_over_message = "GAME OVER"
+
+        self._draw_message(game_over_message, 60, (255, 255, 255), (SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/3), True)
+        self._draw_message(high_score_message, 40, (255, 255, 255), (SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/2.2), False)
+
+    def game_over_with_new_high_score(self, fireworks):
+        self.screen.fill(BACKGROUND_COLOR)
+        if random.randint(0, 20) == 1:
+            fireworks.append(Firework())
+        self._draw_game_over_message()
+        self._draw_game_over_buttons()
+        self._draw_game_over_message()
+        update_fireworks(self.screen, fireworks)
 
     def game_over(self):
         self.screen.fill(BACKGROUND_COLOR)
         self.paused = True
         self._update_best_score()
-        self.play_button = Button("resources/play_button.png", (SCREEN_SIZE[0]/2 - 100, SCREEN_SIZE[1] - 200))
-        self.close_button = Button("resources/close_button.png", (SCREEN_SIZE[0]/2 + 100, SCREEN_SIZE[1] - 200))
-        self.play_button.draw(self.screen)
-        self.close_button.draw(self.screen)
+        self._draw_game_over_buttons()
+        self._draw_game_over_message()
 
     def draw_new_apple(self):
         self.apple = Apple(self.screen, self.snake.x_coords, self.snake.y_coords)
@@ -206,6 +240,7 @@ class Game:
         self.run()
 
     def run(self):
+        fireworks = []
         running = True
         while running:
             for event in pygame.event.get():
@@ -228,6 +263,8 @@ class Game:
                     exit(0)
             if not self.paused:
                 self.play()
+            if self.new_high_score:
+                self.game_over_with_new_high_score(fireworks)
 
 
 if __name__ == "__main__":
