@@ -28,25 +28,39 @@ class Apple:
 
 
 class Snake:
+    UP = 'up'
+    DOWN = 'down'
+    LEFT = 'left'
+    RIGHT = 'right'
+
     def __init__(self, screen, length):
         self.brick = pygame.image.load("resources/brick.png")
         self.screen = screen
         self.length = length
         self.x_coords = [BASE_COORD] * length
         self.y_coords = [BASE_COORD] * length
-        self.direction = 'down'
+        self.direction = self.DOWN
+        self.prev_direction = self.DOWN
+
+    def _switch_direction(self, direction):
+        self.direction = direction
+        self.prev_direction = direction
 
     def move_up(self):
-        self.direction = 'up'
+        if self.prev_direction != self.DOWN:
+            self._switch_direction(self.UP)
 
     def move_down(self):
-        self.direction = 'down'
+        if self.prev_direction != self.UP:
+            self._switch_direction(self.DOWN)
 
     def move_left(self):
-        self.direction = 'left'
+        if self.prev_direction != self.RIGHT:
+            self._switch_direction(self.LEFT)
 
     def move_right(self):
-        self.direction = 'right'
+        if self.prev_direction != self.LEFT:
+            self._switch_direction(self.RIGHT)
 
     def _check_border_collision(self):
         if self.x_coords[0] < 0:
@@ -75,6 +89,11 @@ class Snake:
         self._check_border_collision()
         self.draw()
 
+    def increase_length(self):
+        self.length += 1
+        self.x_coords.append(-1)
+        self.y_coords.append(-1)
+
     def draw(self):
         self.screen.fill(BACKGROUND_COLOR)
         for i in range(self.length):
@@ -83,17 +102,37 @@ class Snake:
 
 
 class Game:
+    INIT_SNAKE_LENGTH = 7
+
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode(SCREEN_SIZE)
         self.screen.fill(BACKGROUND_COLOR)
-        self.snake = Snake(self.screen, 1)
+        self.snake = Snake(self.screen, self.INIT_SNAKE_LENGTH)
         self.apple = Apple(self.screen)
+        self.score = self.INIT_SNAKE_LENGTH
 
     def play(self):
         self.snake.update_move()
+        if self.is_collision(self.snake.x_coords[0], self.snake.y_coords[0], self.apple.x, self.apple.y):
+            self.snake.increase_length()
+            self.score = self.snake.length
+            self.draw_new_apple()
+        for i in range(2, self.snake.length):
+            if self.is_collision(self.snake.x_coords[0], self.snake.y_coords[0], self.snake.x_coords[i], self.snake.y_coords[i]):
+                self.game_over()
         self.apple.draw()
-        time.sleep(0.3)
+        time.sleep(0.5)
+
+    def game_over(self):
+        exit(0)
+
+    def draw_new_apple(self):
+        self.apple = Apple(self.screen)
+
+    @staticmethod
+    def is_collision(x1, y1, x2, y2):
+        return x1 == x2 and y1 == y2
 
     def run(self):
         running = True
