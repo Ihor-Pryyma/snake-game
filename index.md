@@ -1,37 +1,26 @@
-## Welcome to GitHub Pages
+## Snake Game
 
-You can use the [editor on GitHub](https://github.com/Ihor-Pryyma/snake-game/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+Snake is the common name for a video game concept where the player maneuvers a line which grows in length, with the line itself being a primary obstacle. 
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+<img src="gameplay.gif"/>
 
-### Markdown
+<hr>
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+## Set Up
 
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+Make sure you have installed [Python](https://www.python.org/downloads/) and install pygame library:
+```buildoutcfg
+pip3 install -r requirements.txt
 ```
+<hr>
+## Play
+To play simply run:
+```buildoutcfg
+python3 main.py
+```
+Or convert to binary.
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+<hr>
 
-### Jekyll Themes
+Fireworks logic was borowed from [LytixDev](https://github.com/LytixDev/pygame_fireworks)
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/Ihor-Pryyma/snake-game/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
