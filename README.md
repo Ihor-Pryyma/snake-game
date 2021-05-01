@@ -13,6 +13,7 @@ Make sure you have installed [Python](https://www.python.org/downloads/) and ins
 pip3 install -r requirements.txt
 ```
 <hr>
+
 ## Play
 To play simply run:
 ```buildoutcfg
@@ -22,5 +23,5 @@ Or convert to binary.
 
 <hr>
 
-Fireworks logic was borowed from [LytixDev](https://github.com/LytixDev/pygame_fireworks)
+Fireworks logic was borrowed from [LytixDev](https://github.com/LytixDev/pygame_fireworks)
 
