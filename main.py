@@ -12,9 +12,10 @@ BASE_COORD = 100
 
 
 class Apple:
-    def __init__(self, screen):
-        self.x = self._get_random_coord(0)
-        self.y = self._get_random_coord(1)
+    def __init__(self, screen, snake_x_coords, snake_y_coords):
+        self.snake_x_coords = snake_x_coords
+        self.snake_y_coords = snake_y_coords
+        self.x, self.y = self._get_xy()
         self.screen = screen
         self.image = pygame.image.load("resources/apple.png")
 
@@ -22,16 +23,26 @@ class Apple:
         self.screen.blit(self.image, (self.x, self.y))
         pygame.display.update()
 
+    def _get_xy(self):
+        while True:
+            x = self._get_random_coord(0)
+            y = self._get_random_coord(1)
+            if x not in self.snake_x_coords and y not in self.snake_y_coords:
+                return x, y
+
     @staticmethod
     def _get_random_coord(pos):
         return random.randint(0, (SCREEN_SIZE[pos] // SIZE - 1)) * SIZE
 
 
 class Snake:
-    UP = 'up'
-    DOWN = 'down'
-    LEFT = 'left'
-    RIGHT = 'right'
+    UP = "up"
+    DOWN = "down"
+    LEFT = "left"
+    RIGHT = "right"
+    HEAD_INDEX = 0
+    WIDTH_INDEX = 0
+    HEIGHT_INDEX = 1
 
     def __init__(self, screen, length):
         self.brick = pygame.image.load("resources/brick.png")
@@ -63,28 +74,28 @@ class Snake:
             self._switch_direction(self.RIGHT)
 
     def _check_border_collision(self):
-        if self.x_coords[0] < 0:
-            self.x_coords[0] = SCREEN_SIZE[0]
-        elif self.x_coords[0] > SCREEN_SIZE[0]:
-            self.x_coords[0] = 0
-        elif self.y_coords[0] < 0:
-            self.y_coords[0] = SCREEN_SIZE[1]
-        elif self.y_coords[0] > SCREEN_SIZE[1]:
-            self.y_coords[0] = 0
+        if self.x_coords[self.HEAD_INDEX] < 0:
+            self.x_coords[self.HEAD_INDEX] = SCREEN_SIZE[self.WIDTH_INDEX]
+        elif self.x_coords[self.HEAD_INDEX] > SCREEN_SIZE[self.WIDTH_INDEX]:
+            self.x_coords[self.HEAD_INDEX] = 0
+        elif self.y_coords[self.HEAD_INDEX] < 0:
+            self.y_coords[self.HEAD_INDEX] = SCREEN_SIZE[self.HEIGHT_INDEX]
+        elif self.y_coords[self.HEAD_INDEX] > SCREEN_SIZE[self.HEIGHT_INDEX]:
+            self.y_coords[self.HEAD_INDEX] = 0
 
     def update_move(self):
-        for i in range(self.length-1, 0, -1):
-            self.x_coords[i] = self.x_coords[i-1]
-            self.y_coords[i] = self.y_coords[i-1]
+        for i in range(self.length - 1, 0, -1):
+            self.x_coords[i] = self.x_coords[i - 1]
+            self.y_coords[i] = self.y_coords[i - 1]
 
-        if self.direction == 'up':
-            self.y_coords[0] -= SIZE
-        elif self.direction == 'down':
-            self.y_coords[0] += SIZE
-        elif self.direction == 'right':
-            self.x_coords[0] += SIZE
-        elif self.direction == 'left':
-            self.x_coords[0] -= SIZE
+        if self.direction == self.UP:
+            self.y_coords[self.HEAD_INDEX] -= SIZE
+        elif self.direction == self.DOWN:
+            self.y_coords[self.HEAD_INDEX] += SIZE
+        elif self.direction == self.RIGHT:
+            self.x_coords[self.HEAD_INDEX] += SIZE
+        elif self.direction == self.LEFT:
+            self.x_coords[self.HEAD_INDEX] -= SIZE
 
         self._check_border_collision()
         self.draw()
@@ -101,38 +112,98 @@ class Snake:
         pygame.display.update()
 
 
+class Button:
+    def __init__(self, image_path, position):
+        self.position = position
+        self.image = pygame.image.load(image_path)
+        self.image_rect = None
+
+    def draw(self, screen):
+        self.image_rect = self.image.get_rect(center=self.position)
+        screen.blit(self.image, self.image_rect)
+
+    def event_handler(self, event):
+        if event.type == MOUSEBUTTONDOWN:
+            if event.button == 1:
+                if self.image_rect.collidepoint(event.pos):
+                    return True
+
+
 class Game:
     INIT_SNAKE_LENGTH = 7
+    SPEED = 0.3
+    SPEED_DIFFERENCE = 0.005
+    SNAKE_HEAD_INDEX = 0
 
     def __init__(self):
         pygame.init()
+        pygame.font.init()
         self.screen = pygame.display.set_mode(SCREEN_SIZE)
+        self.snake = None
+        self.apple = None
+        self.score = None
+        self.paused = None
+        self.play_button = None
+        self.close_button = None
+        self.best_score = None
+        self.init_game()
+
+    def init_game(self):
         self.screen.fill(BACKGROUND_COLOR)
         self.snake = Snake(self.screen, self.INIT_SNAKE_LENGTH)
-        self.apple = Apple(self.screen)
+        self.apple = Apple(self.screen, self.snake.x_coords, self.snake.y_coords)
         self.score = self.INIT_SNAKE_LENGTH
+        self.paused = False
+        self.play_button = None
+        self.close_button = None
+        with open("resources/best_score.txt", "r") as best_score_file:
+            self.best_score = best_score_file.read()
+
+    def display_score(self):
+        font = pygame.font.SysFont('arial', 30)
+        score_counter = font.render(f"Score: {self.score}", True, (255, 255, 255))
+        best_score = font.render(f"Best Score: {self.best_score}", True, (255, 255, 255))
+        self.screen.blit(score_counter, (SCREEN_SIZE[0]-200, 10))
+        self.screen.blit(best_score, (SCREEN_SIZE[0]-200, 40))
 
     def play(self):
         self.snake.update_move()
-        if self.is_collision(self.snake.x_coords[0], self.snake.y_coords[0], self.apple.x, self.apple.y):
+        self.display_score()
+        if self.is_collision(self.snake.x_coords[self.SNAKE_HEAD_INDEX], self.snake.y_coords[self.SNAKE_HEAD_INDEX], self.apple.x, self.apple.y):
             self.snake.increase_length()
             self.score = self.snake.length
+            self.SPEED -= self.SPEED_DIFFERENCE
             self.draw_new_apple()
         for i in range(2, self.snake.length):
-            if self.is_collision(self.snake.x_coords[0], self.snake.y_coords[0], self.snake.x_coords[i], self.snake.y_coords[i]):
+            if self.is_collision(self.snake.x_coords[self.SNAKE_HEAD_INDEX], self.snake.y_coords[self.SNAKE_HEAD_INDEX], self.snake.x_coords[i], self.snake.y_coords[i]):
                 self.game_over()
         self.apple.draw()
-        time.sleep(0.5)
+        time.sleep(self.SPEED)
+
+    def _update_best_score(self):
+        if self.score > int(self.best_score):
+            with open("resources/best_score.txt", "w") as best_score_file:
+                best_score_file.write(str(self.score))
 
     def game_over(self):
-        exit(0)
+        self.screen.fill(BACKGROUND_COLOR)
+        self.paused = True
+        self._update_best_score()
+        self.play_button = Button("resources/play_button.png", (SCREEN_SIZE[0]/2 - 100, SCREEN_SIZE[1] - 200))
+        self.close_button = Button("resources/close_button.png", (SCREEN_SIZE[0]/2 + 100, SCREEN_SIZE[1] - 200))
+        self.play_button.draw(self.screen)
+        self.close_button.draw(self.screen)
 
     def draw_new_apple(self):
-        self.apple = Apple(self.screen)
+        self.apple = Apple(self.screen, self.snake.x_coords, self.snake.y_coords)
 
     @staticmethod
     def is_collision(x1, y1, x2, y2):
         return x1 == x2 and y1 == y2
+
+    def restart_game(self):
+        self.init_game()
+        self.run()
 
     def run(self):
         running = True
@@ -149,9 +220,15 @@ class Game:
                         self.snake.move_left()
                     elif event.key == K_RIGHT:
                         self.snake.move_right()
+                if self.paused and self.close_button.event_handler(event):
+                    exit(0)
+                elif self.paused and self.play_button.event_handler(event):
+                    self.restart_game()
                 elif event.type == QUIT:
                     exit(0)
-            self.play()
+            if not self.paused:
+                self.play()
+
 
 if __name__ == "__main__":
     game = Game()
