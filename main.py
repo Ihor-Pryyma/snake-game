@@ -19,7 +19,7 @@ class Apple:
         self.snake_y_coords = snake_y_coords
         self.x, self.y = self._get_xy()
         self.screen = screen
-        self.image = pygame.image.load("resources/apple.png")
+        self.image = pygame.image.load("resources/images/apple.png")
 
     def draw(self):
         self.screen.blit(self.image, (self.x, self.y))
@@ -47,7 +47,7 @@ class Snake:
     HEIGHT_INDEX = 1
 
     def __init__(self, screen, length):
-        self.brick = pygame.image.load("resources/brick.png")
+        self.brick = pygame.image.load("resources/images/brick.png")
         self.screen = screen
         self.length = length
         self.x_coords = [BASE_COORD] * length
@@ -60,19 +60,19 @@ class Snake:
         self.prev_direction = direction
 
     def move_up(self):
-        if self.prev_direction != self.DOWN:
+        if self.prev_direction != self.DOWN or self.length < 2:
             self._switch_direction(self.UP)
 
     def move_down(self):
-        if self.prev_direction != self.UP:
+        if self.prev_direction != self.UP or self.length < 2:
             self._switch_direction(self.DOWN)
 
     def move_left(self):
-        if self.prev_direction != self.RIGHT:
+        if self.prev_direction != self.RIGHT or self.length < 2:
             self._switch_direction(self.LEFT)
 
     def move_right(self):
-        if self.prev_direction != self.LEFT:
+        if self.prev_direction != self.LEFT or self.length < 2:
             self._switch_direction(self.RIGHT)
 
     def _check_border_collision(self):
@@ -153,6 +153,7 @@ class Game:
 
     def init_game(self):
         self.screen.fill(BACKGROUND_COLOR)
+        self._play_background_music()
         self.snake = Snake(self.screen, self.INIT_SNAKE_LENGTH)
         self.apple = Apple(self.screen, self.snake.x_coords, self.snake.y_coords)
         self.score = self.INIT_SNAKE_LENGTH
@@ -174,15 +175,29 @@ class Game:
         self.snake.update_move()
         self.display_score()
         if self.is_collision(self.snake.x_coords[self.SNAKE_HEAD_INDEX], self.snake.y_coords[self.SNAKE_HEAD_INDEX], self.apple.x, self.apple.y):
+            self._play_sound("ding.wav")
             self.snake.increase_length()
             self.score = self.snake.length
             self.SPEED -= self.SPEED_DIFFERENCE
             self.draw_new_apple()
         for i in range(2, self.snake.length):
             if self.is_collision(self.snake.x_coords[self.SNAKE_HEAD_INDEX], self.snake.y_coords[self.SNAKE_HEAD_INDEX], self.snake.x_coords[i], self.snake.y_coords[i]):
+                self._play_sound("hit.wav")
                 self.game_over()
         self.apple.draw()
         time.sleep(self.SPEED)
+
+    @staticmethod
+    def _play_sound(filename):
+        sound = pygame.mixer.Sound(f"resources/sounds/{filename}")
+        pygame.mixer.Sound.play(sound)
+
+    @staticmethod
+    def _play_background_music():
+        playlist = ["cut-man.mp3", "elec-man.mp3", "fire-man.mp3", "ice-man.mp3", "password.mp3", "stage.mp3", "title.mp3"]
+        filename = random.choice(playlist)
+        pygame.mixer.music.load(f"resources/music/{filename}")
+        pygame.mixer.music.play()
 
     def _update_best_score(self):
         if self.score > int(self.best_score):
@@ -191,8 +206,8 @@ class Game:
                 best_score_file.write(str(self.score))
 
     def _draw_game_over_buttons(self):
-        self.play_button = Button("resources/play_button.png", (SCREEN_SIZE[0]/2 - 100, SCREEN_SIZE[1] - 200))
-        self.close_button = Button("resources/close_button.png", (SCREEN_SIZE[0]/2 + 100, SCREEN_SIZE[1] - 200))
+        self.play_button = Button("resources/images/play_button.png", (SCREEN_SIZE[0] / 2 - 100, SCREEN_SIZE[1] - 200))
+        self.close_button = Button("resources/images/close_button.png", (SCREEN_SIZE[0] / 2 + 100, SCREEN_SIZE[1] - 200))
         self.play_button.draw(self.screen)
         self.close_button.draw(self.screen)
 
@@ -222,6 +237,7 @@ class Game:
         update_fireworks(self.screen, fireworks)
 
     def game_over(self):
+        pygame.mixer.music.pause()
         self.screen.fill(BACKGROUND_COLOR)
         self.paused = True
         self._update_best_score()
